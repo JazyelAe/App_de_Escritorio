@@ -1,0 +1,5 @@
+{
+  "version": "2.2.0",
+  "release_notes": "Optimización del motor local JSON/CSV, mejoras en el Worker Service y soporte extendido offline.",
+  "build_date": "2026-10-16"
+}

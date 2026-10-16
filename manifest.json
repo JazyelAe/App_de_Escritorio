@@ -1,0 +1,74 @@
+{
+  "name": "DeskData Pro - Gestor Local JSON/CSV y Monitor de Recursos",
+  "short_name": "DeskDataPro",
+  "description": "Aplicación de escritorio offline que utiliza recursos locales del equipo y gestiona archivos JSON y CSV con Worker Service en segundo plano.",
+  "version": "2.1.0",
+  "app_type": "desktop_and_pwa",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "any",
+  "categories": [
+    "productivity",
+    "utilities",
+    "developer tools"
+  ],
+  "offline_enabled": true,
+  "desktop_config": {
+    "engine": "Python 3 + PySide6 (Qt6)",
+    "supported_os": [
+      "Windows 10/11",
+      "Linux (Ubuntu/Debian/Fedora)",
+      "macOS 12+"
+    ],
+    "local_storage": {
+      "json_database": "datos/registros.json",
+      "csv_exports": "datos/catalogo_inicial.csv",
+      "backups_dir": "datos/respaldos"
+    },
+    "worker_service": {
+      "module": "worker_service.py",
+      "auto_backup_interval_seconds": 60,
+      "resource_monitor_interval_ms": 2000
+    },
+    "local_updater": {
+      "current_version": "2.1.0",
+      "build_date": "2026-10-16",
+      "update_channel": "local_package",
+      "requires_admin_for_system_install": false
+    }
+  },
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./index.html",
+      "accept": {
+        "application/json": [
+          ".json"
+        ],
+        "text/csv": [
+          ".csv"
+        ]
+      }
+    }
+  ]
+}
