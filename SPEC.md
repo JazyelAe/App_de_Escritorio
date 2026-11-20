@@ -3,7 +3,7 @@
 **Materia:** Aplicaciones Web Progresivas · Unidad I · Actividad Desarrollo
 **Alumno:** Jahir Jaziel Serrano Arana · 10° D
 **Repositorio:** `JazyelAe/App_de_Escritorio`
-**Estado:** borrador para aprobación (Checkpoint A)
+**Estado:** aprobado el 20/11/2026 · implementado · Release v1.0.0 publicado
 
 ## 1. Objetivo
 Tener una **aplicación de escritorio para Windows** hecha con Python + PySide6 (Qt): un gestor de inventario de equipo de cómputo que se instala y ejecuta en la PC, trabaja **sin Internet**, guarda sus datos en archivos locales, usa los diálogos nativos del sistema para abrir y guardar archivos y muestra los recursos reales del equipo. Se distribuye como un **.exe** (PyInstaller) en un GitHub Release, generado con GitHub Actions.
@@ -115,4 +115,17 @@ Opcional: si quieres una captura de la app en **tu escritorio de Windows** con l
 Fuentes técnicas (comprobadas): documentación de Qt for Python, PyInstaller y psutil, y el repositorio de OBS Studio.
 
 ## 11. Pruebas
-_(Se llena después de implementar.)_
+Decisiones aprobadas: se **eliminaron** los archivos web (siguen en el historial de git) y se **desactivó GitHub Pages** en este repo.
+
+| # | Resultado | Evidencia |
+|---|---|---|
+| CA-1 | ✅ `python main.py` abre en Windows 11 (PC de desarrollo). | `01_inicio.png` |
+| CA-2 | ✅ `--self-test`: alta, edición y eliminación se conservan al volver a abrir el almacén. Alta INV-013 y confirmación de borrado en la interfaz. | `05_alta.png`, `06_confirmar_eliminar.png` |
+| CA-3 | ✅ `--self-test`: CSV exportado e importado sin pérdidas (12 registros); `ejemplo_importar.csv` agrega 3. Los botones usan `QFileDialog` nativo. **La captura del diálogo nativo no se automatizó** (Qt no puede tomar imagen de una ventana nativa de Windows). | registro de pruebas |
+| CA-4 | ✅ "laptop" → INV-001; filtro Periféricos → 3 registros. | `03_busqueda.png`, `04_filtro.png` |
+| CA-5 | ✅ La suma de unidades y valor por categoría coincide con los totales. | `07_resumen.png` |
+| CA-6 | ✅ psutil: CPU, RAM (7.9 GB) y disco reales; ya no hay valor fijo de 12.5 %. | `08_equipo.png` |
+| CA-7 | ✅ Actions en verde; Release `v1.0.0` con `DeskDataPro.exe` (≈ 50 MB). | `09_release.png` |
+| CA-8 | ✅ En `windows-latest` (Windows Server 2025) se ejecutó `DeskDataPro.exe --capturas`: 8 imágenes y código de salida 0. Primero falló al cerrar (0xC0000005); se corrigió deteniendo el hilo y liberando la ventana antes que la aplicación. | `10_exe_en_otra_pc.png`, artefacto de Actions |
+| CA-9 | ✅ `--capturas` genera 8 imágenes (local y en Actions). | `docs/capturas/` |
+| CA-10 | ✅ README con capturas, instrucciones y enlaces. | README.md |
