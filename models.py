@@ -1,218 +1,146 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-models.py - Lógica de negocio y persistencia de datos locales (JSON y CSV).
-Permite trabajar con archivos almacenados directamente en la computadora sin necesidad de Internet.
-"""
+"""models.py — Datos de DeskData Pro: lectura y escritura de archivos JSON y CSV en la computadora.
 
+No usa Internet: todo vive en una carpeta local del usuario (por defecto %APPDATA%\\DeskDataPro).
+"""
 import csv
 import json
 import os
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
+CAMPOS = ["id", "nombre", "categoria", "estado", "cantidad", "precio", "ubicacion", "notas"]
+CATEGORIAS = ["Hardware", "Software", "Periféricos", "Almacenamiento", "Componentes", "Redes"]
+ESTADOS = ["Activo", "Mantenimiento", "Bajo stock", "Archivado"]
+BAJO_STOCK = 5  # se considera alerta si la cantidad es menor o igual a este número
 
 
-class LocalDataManager:
-    """Gestor de almacenamiento local para archivos JSON y CSV con respaldo transaccional."""
+def ruta_recurso(relativa: str) -> Path:
+    """Ruta a un archivo incluido en la app. Con PyInstaller los archivos se extraen en sys._MEIPASS."""
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    return base / relativa
 
-    REQUIRED_FIELDS = [
-        "id",
-        "nombre",
-        "categoria",
-        "estado",
-        "cantidad",
-        "precio_unitario",
-        "ubicacion",
-        "ultima_actualizacion",
-        "notas",
-    ]
 
-    def __init__(self, base_dir: Optional[Path] = None):
-        self.base_dir = Path(base_dir) if base_dir else Path(__file__).resolve().parent
-        self.data_dir = self.base_dir / "datos"
-        self.backups_dir = self.data_dir / "respaldos"
-        self.json_path = self.data_dir / "registros.json"
-        self.csv_path = self.data_dir / "catalogo_inicial.csv"
-        self.manifest_path = self.base_dir / "manifest.json"
+def carpeta_datos_por_defecto() -> Path:
+    """Carpeta de datos del usuario en Windows (%APPDATA%) o en su carpeta personal en otros sistemas."""
+    base = os.environ.get("APPDATA") or str(Path.home() / ".config")
+    return Path(base) / "DeskDataPro"
 
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.backups_dir.mkdir(parents=True, exist_ok=True)
-        self._ensure_initial_files()
 
-    def _ensure_initial_files(self) -> None:
-        """Garantiza que los archivos JSON y CSV locales existan en el equipo."""
-        if not self.json_path.exists():
-            default_data = self._get_seed_data()
-            self.save_to_json(default_data, self.json_path)
-        if not self.csv_path.exists():
-            records = self.load_from_json(self.json_path)
-            self.export_to_csv(records, self.csv_path)
+def normalizar(registro: dict) -> dict:
+    """Limpia un registro: textos sin espacios extra y números con el tipo correcto."""
+    limpio = {campo: str(registro.get(campo, "") or "").strip() for campo in CAMPOS}
+    limpio["id"] = limpio["id"].upper()
+    try:
+        limpio["cantidad"] = int(float(limpio["cantidad"] or 0))
+    except ValueError:
+        limpio["cantidad"] = 0
+    try:
+        limpio["precio"] = round(float(limpio["precio"] or 0), 2)
+    except ValueError:
+        limpio["precio"] = 0.0
+    return limpio
+
+
+class Almacen:
+    """Guarda los registros del inventario en registros.json y hace respaldos."""
+
+    def __init__(self, carpeta: Path | None = None):
+        self.carpeta = Path(carpeta) if carpeta else carpeta_datos_por_defecto()
+        self.archivo = self.carpeta / "registros.json"
+        self.respaldos = self.carpeta / "respaldos"
+        self.respaldos.mkdir(parents=True, exist_ok=True)
+        if not self.archivo.exists():
+            # Primera vez: se copian los datos de ejemplo incluidos en la app.
+            semilla = json.loads(ruta_recurso("datos/semilla.json").read_text(encoding="utf-8"))
+            self.guardar([normalizar(r) for r in semilla])
+
+    # ---------- JSON ----------
+    def cargar(self) -> list[dict]:
+        datos = json.loads(self.archivo.read_text(encoding="utf-8"))
+        return [normalizar(r) for r in datos.get("registros", [])]
+
+    def guardar(self, registros: list[dict]) -> None:
+        contenido = {
+            "aplicacion": "DeskData Pro",
+            "guardado": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "total": len(registros),
+            "registros": registros,
+        }
+        # Se escribe primero a un archivo temporal y luego se reemplaza: así no se corrompe si algo falla.
+        temporal = self.archivo.with_suffix(".tmp")
+        temporal.write_text(json.dumps(contenido, ensure_ascii=False, indent=2), encoding="utf-8")
+        temporal.replace(self.archivo)
+
+    def respaldar(self) -> Path:
+        destino = self.respaldos / f"registros_{datetime.now():%Y%m%d_%H%M%S}.json"
+        shutil.copy2(self.archivo, destino)
+        return destino
+
+    # ---------- CSV ----------
+    @staticmethod
+    def exportar_csv(registros: list[dict], ruta: Path) -> None:
+        # utf-8-sig agrega una marca para que Excel muestre bien los acentos.
+        with open(ruta, "w", newline="", encoding="utf-8-sig") as f:
+            escritor = csv.DictWriter(f, fieldnames=CAMPOS)
+            escritor.writeheader()
+            escritor.writerows(registros)
 
     @staticmethod
-    def _get_seed_data() -> List[Dict]:
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return [
-            {
-                "id": "INV-001",
-                "nombre": "Estación de Trabajo Portátil Pro 16",
-                "categoria": "Hardware",
-                "estado": "Activo",
-                "cantidad": 12,
-                "precio_unitario": 24500.00,
-                "ubicacion": "Almacén Central - Estante A1",
-                "ultima_actualizacion": now_str,
-                "notas": "Equipo configurado para desarrollo local con Python y Qt.",
-            },
-            {
-                "id": "INV-002",
-                "nombre": "Monitor UltraWide 34 Pulgadas IPS",
-                "categoria": "Periféricos",
-                "estado": "Activo",
-                "cantidad": 8,
-                "precio_unitario": 8900.50,
-                "ubicacion": "Almacén Central - Estante B2",
-                "ultima_actualizacion": now_str,
-                "notas": "Calibrado de fábrica para diseño de interfaces.",
-            },
-            {
-                "id": "INV-003",
-                "nombre": "Servidor NAS Local 4 Bahías 16TB",
-                "categoria": "Almacenamiento",
-                "estado": "Activo",
-                "cantidad": 3,
-                "precio_unitario": 18200.00,
-                "ubicacion": "Sala de Servidores - Rack 1",
-                "ultima_actualizacion": now_str,
-                "notas": "Respaldo automático sin conexión a Internet (Red Local).",
-            },
-        ]
+    def leer_csv(ruta: Path) -> list[dict]:
+        with open(ruta, newline="", encoding="utf-8-sig") as f:
+            return [normalizar(fila) for fila in csv.DictReader(f) if fila.get("id")]
 
-    def normalize_record(self, raw: Dict) -> Dict:
-        """Normaliza y valida los tipos de datos de un registro individual."""
-        try:
-            cantidad = int(float(str(raw.get("cantidad", 0)).strip() or 0))
-        except ValueError:
-            cantidad = 0
+    @staticmethod
+    def exportar_json(registros: list[dict], ruta: Path) -> None:
+        Path(ruta).write_text(json.dumps(registros, ensure_ascii=False, indent=2), encoding="utf-8")
 
-        try:
-            precio = round(float(str(raw.get("precio_unitario", 0.0)).strip() or 0.0), 2)
-        except ValueError:
-            precio = 0.0
+    @staticmethod
+    def leer_json(ruta: Path) -> list[dict]:
+        datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
+        lista = datos.get("registros", []) if isinstance(datos, dict) else datos
+        return [normalizar(r) for r in lista if r.get("id")]
 
-        return {
-            "id": str(raw.get("id", "")).strip() or f"INV-{int(datetime.now().timestamp())}",
-            "nombre": str(raw.get("nombre", "Sin nombre")).strip(),
-            "categoria": str(raw.get("categoria", "General")).strip(),
-            "estado": str(raw.get("estado", "Activo")).strip(),
-            "cantidad": max(0, cantidad),
-            "precio_unitario": max(0.0, precio),
-            "ubicacion": str(raw.get("ubicacion", "Local")).strip(),
-            "ultima_actualizacion": str(
-                raw.get("ultima_actualizacion") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            ).strip(),
-            "notas": str(raw.get("notas", "")).strip(),
-        }
 
-    def load_from_json(self, file_path: Optional[Path] = None) -> List[Dict]:
-        """Carga registros desde un archivo JSON local."""
-        target = Path(file_path) if file_path else self.json_path
-        if not target.exists():
-            return []
-        with open(target, "r", encoding="utf-8") as f:
-            content = json.load(f)
-        if isinstance(content, dict) and "registros" in content:
-            raw_list = content["registros"]
-        elif isinstance(content, list):
-            raw_list = content
+# ---------- Funciones de apoyo (se prueban con --self-test) ----------
+def combinar(actuales: list[dict], nuevos: list[dict]) -> tuple[list[dict], int, int]:
+    """Agrega los registros nuevos y actualiza los que ya existen (mismo ID). Devuelve (lista, agregados, actualizados)."""
+    por_id = {r["id"]: r for r in actuales}
+    agregados = actualizados = 0
+    for r in nuevos:
+        if r["id"] in por_id:
+            actualizados += 1
         else:
-            raw_list = []
-        return [self.normalize_record(item) for item in raw_list if isinstance(item, dict)]
+            agregados += 1
+        por_id[r["id"]] = r
+    return list(por_id.values()), agregados, actualizados
 
-    def save_to_json(self, records: List[Dict], file_path: Optional[Path] = None) -> Path:
-        """Guarda los registros en formato JSON de forma atómica."""
-        target = Path(file_path) if file_path else self.json_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        normalized = [self.normalize_record(r) for r in records]
-        payload = {
-            "metadata": {
-                "aplicacion": "DeskData Pro (Python + PySide6)",
-                "formato": "JSON Local Database",
-                "ultima_escritura": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "total_registros": len(normalized),
-            },
-            "registros": normalized,
-        }
-        temp_file = target.with_suffix(".tmp.json")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-        os.replace(temp_file, target)
-        return target
 
-    def export_to_csv(self, records: List[Dict], file_path: Optional[Path] = None) -> Path:
-        """Exporta la lista de registros a un archivo CSV estándar codificado en UTF-8."""
-        target = Path(file_path) if file_path else self.csv_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        normalized = [self.normalize_record(r) for r in records]
-        with open(target, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=self.REQUIRED_FIELDS)
-            writer.writeheader()
-            for row in normalized:
-                writer.writerow(row)
-        return target
+def filtrar(registros: list[dict], texto: str = "", categoria: str = "Todas", estado: str = "Todos") -> list[dict]:
+    texto = texto.strip().lower()
+    return [
+        r for r in registros
+        if (categoria == "Todas" or r["categoria"] == categoria)
+        and (estado == "Todos" or r["estado"] == estado)
+        and (not texto or texto in f"{r['id']} {r['nombre']} {r['ubicacion']}".lower())
+    ]
 
-    def import_from_csv(self, file_path: Path) -> List[Dict]:
-        """Importa registros desde un archivo CSV almacenado en la computadora."""
-        target = Path(file_path)
-        if not target.exists():
-            raise FileNotFoundError(f"No se encontró el archivo CSV: {target}")
-        imported = []
-        with open(target, "r", encoding="utf-8-sig", newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if any(row.values()):
-                    imported.append(self.normalize_record(row))
-        return imported
 
-    def create_local_backup(self, records: List[Dict]) -> Path:
-        """Crea una copia de seguridad local con marca de tiempo en la carpeta de respaldos."""
-        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = self.backups_dir / f"respaldo_{stamp}.json"
-        self.save_to_json(records, backup_file)
-        # Mantener solo los últimos 10 respaldos locales para cuidar el almacenamiento
-        backups = sorted(self.backups_dir.glob("respaldo_*.json"))
-        while len(backups) > 10:
-            oldest = backups.pop(0)
-            oldest.unlink(missing_ok=True)
-        return backup_file
+def estadisticas(registros: list[dict]) -> dict:
+    return {
+        "registros": len(registros),
+        "unidades": sum(r["cantidad"] for r in registros),
+        "valor": sum(r["cantidad"] * r["precio"] for r in registros),
+        "alertas": sum(1 for r in registros if r["cantidad"] <= BAJO_STOCK),
+    }
 
-    def compute_statistics(self, records: List[Dict]) -> Dict:
-        """Calcula métricas e indicadores locales del inventario/dataset."""
-        total_items = len(records)
-        total_unidades = sum(int(r.get("cantidad", 0)) for r in records)
-        valor_total = sum(
-            int(r.get("cantidad", 0)) * float(r.get("precio_unitario", 0.0)) for r in records
-        )
-        bajo_stock = sum(
-            1 for r in records if int(r.get("cantidad", 0)) <= 5 or r.get("estado") == "Bajo Stock"
-        )
-        categorias: Dict[str, int] = {}
-        for r in records:
-            cat = r.get("categoria", "General")
-            categorias[cat] = categorias.get(cat, 0) + 1
 
-        return {
-            "total_registros": total_items,
-            "total_unidades": total_unidades,
-            "valor_inventario": round(valor_total, 2),
-            "alertas_bajo_stock": bajo_stock,
-            "categorias": categorias,
-        }
-
-    def load_manifest(self) -> Dict:
-        """Lee el archivo manifest.json local con la configuración de la aplicación."""
-        if self.manifest_path.exists():
-            with open(self.manifest_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"name": "DeskData Pro", "version": "2.1.0", "offline_enabled": True}
+def resumen_por_categoria(registros: list[dict]) -> list[tuple[str, int, float]]:
+    """[(categoría, unidades, valor)] ordenado de mayor a menor número de unidades."""
+    totales: dict[str, list] = {}
+    for r in registros:
+        t = totales.setdefault(r["categoria"], [0, 0.0])
+        t[0] += r["cantidad"]
+        t[1] += r["cantidad"] * r["precio"]
+    return sorted(((c, u, v) for c, (u, v) in totales.items()), key=lambda x: -x[1])

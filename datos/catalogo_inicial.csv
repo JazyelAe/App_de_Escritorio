@@ -1,6 +1,0 @@
-id,nombre,categoria,estado,cantidad,precio_unitario,ubicacion,ultima_actualizacion,notas
-INV-001,Estación de Trabajo Portátil Pro 16,Hardware,Activo,12,24500.0,Almacén Central - Estante A1,2026-10-15 10:30:00,Equipo configurado para desarrollo local con Python y Qt.
-INV-002,Monitor UltraWide 34 Pulgadas IPS,Periféricos,Activo,8,8900.5,Almacén Central - Estante B2,2026-10-15 12:15:00,Calibrado de fábrica para diseño de interfaces.
-INV-003,Servidor NAS Local 4 Bahías 16TB,Almacenamiento,Activo,3,18200.0,Sala de Servidores - Rack 1,2026-10-15 16:40:00,Respaldo automático sin conexión a Internet (Red Local).
-INV-004,Licencia Suite Herramientas CAD Offline,Software,Mantenimiento,25,3400.0,Repositorio Local de Licencias,2026-10-16 09:00:00,Requiere actualización local v2.4 en estaciones Windows/Linux.
-INV-005,Unidad SSD NVMe M.2 2TB Industrial,Componentes,Bajo Stock,4,2850.0,Almacén Técnico - Gaveta C4,2026-10-16 11:20:00,Alta velocidad de lectura/escritura para bases JSON/CSV.

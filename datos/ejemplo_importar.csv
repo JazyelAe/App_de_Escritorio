@@ -1,0 +1,4 @@
+id,nombre,categoria,estado,cantidad,precio,ubicacion,notas
+INV-101,Cámara web Full HD,Periféricos,Activo,10,890,Almacén central · Estante B3,Para videollamadas
+INV-102,Router de respaldo,Redes,Activo,2,1750,Sala de servidores · Rack 2,
+INV-103,Disco duro externo 2 TB,Almacenamiento,Bajo stock,2,1490,Almacén central · Cajón C2,Usado para respaldos

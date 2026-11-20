@@ -1,0 +1,14 @@
+[
+  {"id": "INV-001", "nombre": "Laptop de desarrollo 16\"", "categoria": "Hardware", "estado": "Activo", "cantidad": 12, "precio": 24500.0, "ubicacion": "Almacén central · Estante A1", "notas": "Configurada con Python y Qt."},
+  {"id": "INV-002", "nombre": "Monitor ultrawide 34\"", "categoria": "Periféricos", "estado": "Activo", "cantidad": 8, "precio": 8900.5, "ubicacion": "Almacén central · Estante B2", "notas": "Calibrado de fábrica."},
+  {"id": "INV-003", "nombre": "Servidor NAS 4 bahías 16 TB", "categoria": "Almacenamiento", "estado": "Activo", "cantidad": 3, "precio": 18200.0, "ubicacion": "Sala de servidores · Rack 1", "notas": "Respaldo de la red local."},
+  {"id": "INV-004", "nombre": "Licencia de software CAD", "categoria": "Software", "estado": "Mantenimiento", "cantidad": 25, "precio": 3400.0, "ubicacion": "Repositorio de licencias", "notas": "Renovar en enero."},
+  {"id": "INV-005", "nombre": "Unidad SSD NVMe 1 TB", "categoria": "Componentes", "estado": "Bajo stock", "cantidad": 4, "precio": 2850.0, "ubicacion": "Almacén central · Cajón C3", "notas": "Pedir 10 piezas más."},
+  {"id": "INV-006", "nombre": "Switch de red 24 puertos", "categoria": "Redes", "estado": "Activo", "cantidad": 5, "precio": 6400.0, "ubicacion": "Sala de servidores · Rack 2", "notas": ""},
+  {"id": "INV-007", "nombre": "Teclado mecánico", "categoria": "Periféricos", "estado": "Activo", "cantidad": 30, "precio": 1150.0, "ubicacion": "Almacén central · Estante B1", "notas": ""},
+  {"id": "INV-008", "nombre": "Mouse inalámbrico", "categoria": "Periféricos", "estado": "Bajo stock", "cantidad": 3, "precio": 420.0, "ubicacion": "Almacén central · Estante B1", "notas": "Quedan pocas piezas."},
+  {"id": "INV-009", "nombre": "Memoria RAM DDR5 16 GB", "categoria": "Componentes", "estado": "Activo", "cantidad": 20, "precio": 1350.0, "ubicacion": "Almacén central · Cajón C1", "notas": ""},
+  {"id": "INV-010", "nombre": "Licencia de antivirus", "categoria": "Software", "estado": "Activo", "cantidad": 40, "precio": 520.0, "ubicacion": "Repositorio de licencias", "notas": "Anual."},
+  {"id": "INV-011", "nombre": "Access point Wi-Fi 6", "categoria": "Redes", "estado": "Mantenimiento", "cantidad": 6, "precio": 2900.0, "ubicacion": "Laboratorio 2", "notas": "Actualizar firmware."},
+  {"id": "INV-012", "nombre": "PC de escritorio i5", "categoria": "Hardware", "estado": "Activo", "cantidad": 15, "precio": 13800.0, "ubicacion": "Laboratorio 1", "notas": ""}
+]
