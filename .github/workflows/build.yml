@@ -1,0 +1,62 @@
+# Prueba la lógica, empaqueta DeskDataPro.exe con PyInstaller, lo ejecuta en un Windows limpio (--capturas)
+# y, al crear una etiqueta v*, publica el .exe en un GitHub Release.
+name: Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  construir:
+    runs-on: windows-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Pruebas de la lógica (--self-test)
+        run: python main.py --self-test
+
+      - name: Empaquetar con PyInstaller
+        run: >
+          pyinstaller --noconfirm --onefile --windowed --name DeskDataPro --icon icons/app_icon.ico
+          --add-data "datos/semilla.json;datos" --add-data "datos/ejemplo_importar.csv;datos"
+          --add-data "icons/app_icon.png;icons" main.py
+
+      - name: Probar el .exe (abre la app y toma capturas)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\DeskDataPro.exe" -ArgumentList "--capturas","capturas_exe" -PassThru -Wait
+          Write-Host "Código de salida: $($p.ExitCode)"
+          Get-ChildItem capturas_exe
+          if ($p.ExitCode -ne 0 -or (Get-ChildItem capturas_exe -Filter *.png).Count -lt 8) { exit 1 }
+
+      - name: Guardar .exe y capturas
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskDataPro
+          path: |
+            dist/DeskDataPro.exe
+            capturas_exe/
+
+      - name: Crear Release con el .exe
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/DeskDataPro.exe \
+            --title "DeskData Pro $GITHUB_REF_NAME" \
+            --notes "Aplicación de escritorio para Windows 10/11 (Python + PySide6). Descarga DeskDataPro.exe y ábrelo; no necesitas instalar Python. Si Windows SmartScreen muestra un aviso, elige 'Más información' → 'Ejecutar de todas formas' (el ejecutable no está firmado digitalmente)."
