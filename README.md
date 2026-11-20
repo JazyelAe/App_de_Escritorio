@@ -1,49 +1,59 @@
-# DeskData Pro — Aplicación de Escritorio (Python + PySide6 + JSON/CSV + Manifest + Worker Service)
+# 🖥️ DeskData Pro — Aplicación de escritorio
 
-Este paquete contiene la implementación completa y funcional de la **Aplicación de Escritorio** descrita en tu especificación técnica:
+Aplicación de **escritorio para Windows** hecha con **Python + PySide6 (Qt)** para llevar el inventario de equipo de cómputo de un laboratorio u oficina. Se ejecuta en la PC, **funciona sin Internet**, guarda sus datos en archivos locales (JSON y CSV), usa los diálogos nativos de Windows y muestra los recursos reales del equipo.
 
-1. **Definición**: Programa instalado directamente en una computadora para realizar funciones especializadas de gestión de datos y monitoreo.
-2. **Ejecución local y recursos**: Se ejecuta localmente, monitorea el uso de CPU, memoria RAM y almacenamiento del equipo, y trabaja directamente con archivos **JSON** y **CSV** almacenados en la computadora.
-3. **Funcionamiento sin Internet (Offline-First)**: Funciona al 100% sin conexión a Internet, brindando herramientas especializadas de importación, exportación, filtrado, cálculo de inventario y respaldos automáticos.
-4. **Instalación y actualizaciones locales**: Incluye instaladores para el sistema operativo (`instalar_y_ejecutar.bat` para Windows, `instalar_y_ejecutar.sh` para Linux/macOS), configuración de manifiesto (`manifest.json`), servicio en segundo plano (`worker_service.py` y `service-worker.js`) y módulo de actualizaciones locales (`datos/actualizacion_local.json`).
+> Subproducto No. 3 · Aplicaciones Web Progresivas · Unidad I
+> Universidad Tecnológica de Puebla · Jahir Jaziel Serrano Arana · 10° D
 
-## Estructura de Archivos del Paquete
+## ⬇️ Descargar
+**https://github.com/JazyelAe/App_de_Escritorio/releases/tag/v1.0.0** → `DeskDataPro.exe` (Windows 10/11, no requiere Python).
+Como el .exe no está firmado digitalmente, Windows SmartScreen puede avisar: *Más información → Ejecutar de todas formas*.
 
-- `main.py`: Aplicación de escritorio nativa con interfaz gráfica construida en **Python + PySide6 (Qt6)**.
-- `models.py`: Lógica completa de negocio para manejo de archivos locales **JSON** (`datos/registros.json`) y **CSV** (`datos/catalogo_inicial.csv`), validaciones, estadísticas y respaldos transaccionales.
-- `worker_service.py`: Servicio de trabajo en segundo plano (`QThread` Worker Service) que recolecta métricas de hardware del equipo (CPU, RAM, Disco, SO) y ejecuta respaldos automáticos sin bloquear la ventana principal.
-- `manifest.json`: Manifiesto completo compatible tanto con la configuración nativa de escritorio como con instalación Web/PWA (`display: standalone`, íconos, manejadores de archivos `.json` y `.csv`).
-- `service-worker.js` y `worker-service.js`: Service Worker con caché local completo (`Cache-First`) para funcionamiento sin Internet e instalación desde navegador.
-- `index.html`, `app.js`, `styles.css`: Interfaz instalable PWA de escritorio lista para abrir o instalar en un clic.
-- `datos/registros.json` y `datos/catalogo_inicial.csv`: Bases de datos locales pre-pobladas y sincronizadas.
-- `datos/actualizacion_local.json`: Paquete de actualización local para probar el flujo de actualización sin Internet.
-- `icons/`: Íconos PNG (`icon-192.png`, `icon-512.png`, `app_icon.png`).
-- `requirements.txt`, `instalar_y_ejecutar.bat`, `instalar_y_ejecutar.sh`: Scripts de instalación y arranque directo.
+## Funciones
+| | Función |
+|---|---|
+| 📦 | Tabla de inventario con alta, edición y eliminación (con confirmación) |
+| 💾 | Guardado automático en `%APPDATA%\DeskDataPro\registros.json` y respaldos |
+| 📂 | Importar / exportar **CSV** y **JSON** con el diálogo de archivos de Windows |
+| 🔎 | Búsqueda por texto y filtros por categoría y estado |
+| 📊 | Resumen con gráfica de barras por categoría (QPainter) y totales |
+| 🖥️ | CPU, RAM y disco **reales** (psutil) medidos en un hilo en segundo plano |
 
-## Cómo Ejecutar la Aplicación Nativa (Python + PySide6)
+## ¿Por qué es una aplicación de escritorio?
+- Se **instala o copia en la computadora** y se ejecuta como un programa de Windows (.exe), con su ventana e icono.
+- **No necesita Internet ni navegador**: trabaja con archivos y recursos locales del sistema operativo.
+- Usa componentes nativos: diálogos de archivos, cuadros de mensaje, carpeta de datos del usuario y hardware del equipo.
 
-### En Windows:
-Haz doble clic en `instalar_y_ejecutar.bat` o ejecuta en terminal:
-```bash
+## Tecnologías
+Python 3.13 · PySide6 6.12 (Qt 6) · psutil 7.2 · JSON / CSV · PyInstaller 6.22 · GitHub Actions (windows-latest) + Releases
+
+## Estructura
+```
+main.py            arranque y opciones (--capturas, --self-test, --datos)
+ventana.py         ventana principal y pestañas
+grafica.py         gráfica de barras con QPainter
+models.py          datos: JSON, CSV, respaldos, filtros y estadísticas
+worker_service.py  hilo de monitoreo con psutil
+capturas.py        modo --capturas (QWidget.grab)
+datos/             semilla.json (datos iniciales) y ejemplo_importar.csv
+```
+
+## Cómo ejecutarla desde el código
+```
 pip install -r requirements.txt
 python main.py
 ```
+- `python main.py --self-test` prueba la lógica (alta/edición/baja, CSV, filtros, resumen, psutil).
+- `python main.py --capturas` genera las imágenes de `docs/capturas/` con datos de ejemplo (no toca tus datos).
+- `construir.bat` crea `dist\DeskDataPro.exe` con PyInstaller.
 
-### En Linux / macOS:
-```bash
-chmod +x instalar_y_ejecutar.sh
-./instalar_y_ejecutar.sh
-```
+## Capturas
+| Inventario | Edición | Resumen |
+|---|---|---|
+| ![](docs/capturas/01_inicio.png) | ![](docs/capturas/02_formulario.png) | ![](docs/capturas/07_resumen.png) |
+| **Búsqueda** | **Filtro** | **Equipo (recursos reales)** |
+| ![](docs/capturas/03_busqueda.png) | ![](docs/capturas/04_filtro.png) | ![](docs/capturas/08_equipo.png) |
 
-### Para generar un ejecutable instalable (`.exe`) en Windows:
-```bash
-pip install pyinstaller
-pyinstaller --noconfirm --onefile --windowed --icon=icons/app_icon.png --name="DeskDataPro" main.py
-```
-
-## Cómo Ejecutar o Instalar la Versión con Manifest y Service Worker (PWA de Escritorio)
-
-```bash
-python -m http.server 8080
-```
-Abre `http://localhost:8080` en Chrome o Edge y haz clic en **"Instalar en Escritorio"**.
+## Documentación
+- Especificación y pruebas: [SPEC.md](SPEC.md)
+- Repositorio central de la unidad: https://github.com/JazyelAe/AWP-Unidad-I
