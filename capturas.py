@@ -6,7 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QEvent, QTimer
 from PySide6.QtWidgets import QApplication
 
 import models
@@ -87,4 +87,9 @@ def ejecutar(app: QApplication, destino: Path) -> int:
     QTimer.singleShot(2500, siguiente)  # espera a que el monitor tome la primera lectura
     # Seguro: si algo se atora, se cierra a los 60 segundos.
     QTimer.singleShot(60000, lambda: os._exit(1))
-    return app.exec()
+    codigo = app.exec()
+    # Se libera la ventana antes que la aplicación para que Qt se cierre en orden.
+    ventana.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    del ventana
+    return codigo

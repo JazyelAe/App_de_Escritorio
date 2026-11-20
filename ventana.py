@@ -396,5 +396,6 @@ class VentanaPrincipal(QMainWindow):
         self.bitacora.appendPlainText(f"[{datetime.now():%H:%M:%S}] {texto}")
 
     def closeEvent(self, evento) -> None:
+        self.monitor.lectura.disconnect(self.mostrar_equipo)
         self.monitor.detener()
         super().closeEvent(evento)

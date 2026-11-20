@@ -42,10 +42,13 @@ class MonitorEquipo(QThread):
     def run(self) -> None:
         psutil.cpu_percent(interval=None)  # la primera lectura de CPU siempre es 0: se descarta
         while self._activo:
-            self.msleep(self.intervalo_ms)
-            if self._activo:
-                self.lectura.emit(leer_equipo(self.carpeta))
+            # Se duerme en pasos de 100 ms para poder detenerse rápido al cerrar la ventana.
+            for _ in range(self.intervalo_ms // 100):
+                if not self._activo:
+                    return
+                self.msleep(100)
+            self.lectura.emit(leer_equipo(self.carpeta))
 
     def detener(self) -> None:
         self._activo = False
-        self.wait(3000)
+        self.wait()  # espera a que el hilo termine antes de destruir la ventana

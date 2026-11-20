@@ -72,6 +72,7 @@ def main() -> int:
     if args.self_test:
         return self_test()
 
+    from PySide6.QtCore import QEvent
     from PySide6.QtWidgets import QApplication
     import models
 
@@ -84,7 +85,12 @@ def main() -> int:
     from ventana import VentanaPrincipal
     ventana = VentanaPrincipal(models.Almacen(Path(args.datos) if args.datos else None))
     ventana.show()
-    return app.exec()
+    codigo = app.exec()
+    # Se libera la ventana antes que la aplicación para que Qt se cierre en orden.
+    ventana.deleteLater()
+    app.sendPostedEvents(None, QEvent.DeferredDelete)
+    del ventana
+    return codigo
 
 
 if __name__ == "__main__":
